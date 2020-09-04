@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <title>Echarts</title>
+</head>
+<body style="height: 150%; margin: 0">
+<div id="container" style="height: 150%"></div>
+<script type="text/javascript" src="echarts.min.js"></script>
+<script src="./qwebchannel.js"></script>
+<script language="javascript">
+    // echarts.init(document.getElementById('container')).dispose();
+    // var myChart = echarts.init(document.getElementById('container'));
+    // var datajson =  {"c_in": [35.79861068725585, 35.76388931274414, 35.96064758300781, 36.53935241699219, 36.50463104248047],
+    // "c_out": [35.79861068725585, 35.76388931274414, 35.96064758300781, 36.53935241699219, 36.50463104248047]}
+    // getJson(datajson);
+
+    // 更新echarts图
+    function getJson(jsondata) {
+        echarts.init(document.getElementById('container')).dispose();
+        var myChart = echarts.init(document.getElementById('container'));
+        var key_list = Object.keys(jsondata);
+        key_list.splice(key_list.length - 1, 1);
+        var timestamp = jsondata['timestamp'];
+        var len = key_list.length;
+        var option = {
+            title: [],
+            axisPointer: {
+                link: {
+                    xAxisIndex: 'all'
+                },
+                label: {
+                    backgroundColor: '#777'
+                }
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: [],
+            yAxis: [],
+            grid: [],
+            series: []
+        };
+        var title_top = ['1%', '18%', '36%', '52%', '69%', '86%'];
+        var grid_list = [{
+            top: '3%',
+            height: "12%"
+        }, {
+            top: '20%',
+            height: "12%"
+        }, {
+            top: '37%',
+            height: "12%"
+        }, {
+            top: '54%',
+            height: "12%"
+        }, {
+            top: '71%',
+            height: "12%"
+        }, {
+            top: '88%',
+            height: "12%"
+        }];
+        for (i = 0; i < len; i++) {
+            option.title.push({
+                top: title_top[i],
+                left: 'center',
+                text: key_list[i]
+            });
+            option.xAxis.push({
+                data: timestamp,
+                gridIndex: i
+            });
+            option.yAxis.push({
+                splitLine: {
+                    show: false
+                },
+                gridIndex: i,
+                scale: true,
+            });
+            option.series.push({
+                type: 'line',
+                showSymbol: false,
+                data: jsondata[key_list[i]],
+                xAxisIndex: i,
+                yAxisIndex: i
+            })
+            option.grid.push(grid_list[i])
+        }
+
+        myChart.setOption(option);
+        // js把数据出给QT
+        new QWebChannel(qt.webChannelTransport, function (channel) {
+            // 获取qt中绑定的交互对象
+            window.pyjs = channel.objects.interact_obj;
+
+            // js 绑定qt中的信号
+            pyjs.sig_send_to_js.connect(function (str) {
+                document.getElementById("output").value = str;
+            });
+
+            myChart.on('click', function (params) {
+                var x_value = params.name;
+                pyjs.receive_str_from_js(x_value)
+            });
+        });
+    }
+
+
+</script>
+</body>
+</html>
+
+
